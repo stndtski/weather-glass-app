@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iOS Weather Glass</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="dynamic-bg"></div>
+
+    <div class="container glass">
+        <h1>Weather</h1>
+        
+        <div class="search-box">
+            <input id="cityInput" type="text" placeholder="Search city..." autocomplete="off" />
+            <button onclick="getWeather()">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+
+        <div id="loader" class="hidden">Loading...</div>
+        <div id="error" class="hidden"></div>
+
+        <div id="result" class="card hidden">
+            <h2 id="cityName">New York, US</h2>
+            <div class="weather-main">
+                <div id="weatherIcon" class="weather-icon">☀️</div>
+                <div id="temperature" class="temp">24°</div>
+            </div>
+            <p id="condition" class="condition-text">Clear Sky</p>
+            
+            <div class="details glass-inner">
+                <div class="detail-item">
+                    <i class="fa-solid fa-wind"></i>
+                    <span id="wind">10 km/h</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fa-solid fa-droplet"></i>
+                    <span id="humidity">50%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
