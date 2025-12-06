@@ -53,33 +53,94 @@ function updateWeatherVisuals(code) {
     const body = document.body;
     const conditionText = document.getElementById("condition");
     const iconDiv = document.getElementById("weatherIcon");
+    const bg = document.getElementById("dynamic-bg");
 
     body.className = "";
+    bg.innerHTML = "";
 
     if (code === 0) {
         body.classList.add("sunny");
         conditionText.innerText = "Sunny";
         iconDiv.innerText = "☀️";
+        createEffects('sun');
     } else if (code >= 1 && code <= 3) {
         body.classList.add("cloudy");
         conditionText.innerText = "Cloudy";
         iconDiv.innerText = "☁️";
+        createEffects('cloud');
     } else if (code >= 51 && code <= 67) {
         body.classList.add("rainy");
         conditionText.innerText = "Rainy";
         iconDiv.innerText = "🌧️";
+        createEffects('rain');
     } else if (code >= 71 && code <= 86) {
         body.classList.add("snowy");
         conditionText.innerText = "Snowy";
         iconDiv.innerText = "❄️";
+        createEffects('snow');
     } else if (code >= 95) {
-        body.classList.add("rainy");
+        body.classList.add("storm");
         conditionText.innerText = "Thunderstorm";
         iconDiv.innerText = "⛈️";
+        createEffects('rain');
+        createEffects('storm');
     } else {
         body.classList.add("cloudy");
         conditionText.innerText = "Overcast";
         iconDiv.innerText = "🌥️";
+        createEffects('cloud');
+    }
+}
+
+function createEffects(type) {
+    const bg = document.getElementById("dynamic-bg");
+
+    if (type === 'rain') {
+        for (let i = 0; i < 50; i++) {
+            const drop = document.createElement('div');
+            drop.classList.add('weather-element', 'rain-drop');
+            drop.style.left = Math.random() * 100 + '%';
+            drop.style.animationDuration = Math.random() * 0.5 + 0.5 + 's';
+            drop.style.animationDelay = Math.random() * 2 + 's';
+            bg.appendChild(drop);
+        }
+    } 
+    else if (type === 'snow') {
+        for (let i = 0; i < 30; i++) {
+            const flake = document.createElement('div');
+            flake.classList.add('weather-element', 'snowflake');
+            flake.style.left = Math.random() * 100 + '%';
+            flake.style.width = Math.random() * 5 + 2 + 'px';
+            flake.style.height = flake.style.width;
+            flake.style.opacity = Math.random();
+            flake.style.animationDuration = Math.random() * 3 + 2 + 's';
+            flake.style.animationDelay = Math.random() * 5 + 's';
+            bg.appendChild(flake);
+        }
+    }
+    else if (type === 'cloud') {
+        for (let i = 0; i < 5; i++) {
+            const cloud = document.createElement('div');
+            cloud.classList.add('weather-element', 'cloud');
+            const size = Math.random() * 100 + 100;
+            cloud.style.width = size + 'px';
+            cloud.style.height = size / 2 + 'px';
+            cloud.style.top = Math.random() * 40 + '%';
+            cloud.style.left = -200 + 'px';
+            cloud.style.animationDuration = Math.random() * 10 + 10 + 's';
+            cloud.style.animationDelay = Math.random() * 5 + 's';
+            bg.appendChild(cloud);
+        }
+    }
+    else if (type === 'sun') {
+        const sun = document.createElement('div');
+        sun.classList.add('weather-element', 'sun');
+        bg.appendChild(sun);
+    }
+    else if (type === 'storm') {
+        const flash = document.createElement('div');
+        flash.classList.add('flash');
+        bg.appendChild(flash);
     }
 }
 
