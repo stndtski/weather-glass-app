@@ -1,49 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>iOS Weather Glass</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Weather Ali - Premium</title>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+    <style>
+        /* --- 1. CORE & FONTS --- */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+            --accent: #4facfe;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+            height: 100vh; width: 100vw;
+            display: flex; justify-content: center; align-items: center;
+            background: #0f0f0f; color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* --- 2. ANIMATED BACKGROUND SCENE --- */
+        #scene {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(180deg, #1a2a6c, #b21f1f, #fdbb2d); /* Default Sunset */
+            overflow: hidden;
+            transition: background 1.5s ease;
+        }
+
+        /* Orbs (Lava Lamp Effect) */
+        .orb {
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); opacity: 0.5;
+            animation: float 20s infinite alternate;
+        }
+        .orb-1 { top: -20%; left: -20%; width: 60vw; height: 60vw; background: rgba(79, 172, 254, 0.4); animation-duration: 25s; }
+        .orb-2 { bottom: -20%; right: -20%; width: 60vw; height: 60vw; background: rgba(0, 242, 254, 0.4); animation-duration: 30s; animation-direction: reverse; }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, 60px) scale(1.1); }
+        }
+
+        /* Celestial Bodies */
+        .sun {
+            position: absolute; width: 200px; height: 200px; border-radius: 50%;
+            background: radial-gradient(circle, #ffd700, transparent 70%);
+            top: 10%; right: 10%; opacity: 0; transition: opacity 1s, top 2s;
+            filter: blur(20px); box-shadow: 0 0 100px #ffd700;
+        }
+        .moon {
+            position: absolute; width: 150px; height: 150px; border-radius: 50%;
+            background: radial-gradient(circle, #fff, transparent 80%);
+            top: 10%; right: 10%; opacity: 0; transition: opacity 1s;
+            filter: blur(15px); box-shadow: 0 0 60px #fff;
+        }
+
+        /* Clouds */
+        .cloud {
+            position: absolute; width: 300px; height: 100px;
+            background: rgba(255,255,255,0.2); border-radius: 100px;
+            filter: blur(30px); opacity: 0; transition: opacity 1s;
+            animation: drift 60s linear infinite;
+        }
+        .c1 { top: 20%; left: -300px; animation-duration: 50s; }
+        .c2 { top: 40%; left: -200px; animation-duration: 70s; animation-delay: -20s; }
+        @keyframes drift { to { transform: translateX(120vw); } }
+
+        /* Rain */
+        .rain-container {
+            position: absolute; width: 100%; height: 100%; pointer-events: none;
+            opacity: 0; transition: opacity 1s;
+        }
+        .rain-drop {
+            position: absolute; width: 2px; height: 100px;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.5));
+            animation: rainFall 0.7s linear infinite;
+        }
+        @keyframes rainFall { from { transform: translateY(-100px); } to { transform: translateY(100vh); } }
+
+        /* --- 3. UI CONTAINER --- */
+        .app-container {
+            width: 90%; max-width: 1000px; height: 90vh; max-height: 800px;
+            background: rgba(20, 20, 20, 0.4); /* Darker glass for contrast */
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 40px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
+            padding: 30px; gap: 20px;
+            position: relative; z-index: 10;
+        }
+
+        /* --- 4. TOP BAR --- */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+        .location-box h1 { font-size: 2rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
+        .location-box span { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
+
+        .search-wrap { 
+            display: flex; background: var(--glass-bg); padding: 5px; 
+            border-radius: 20px; border: 1px solid var(--glass-border);
+            width: 300px; transition: 0.3s;
+        }
+        .search-wrap:focus-within { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
+        .s-input { flex: 1; background: transparent; border: none; color: white; padding: 10px 15px; font-size: 1rem; }
+        .s-btn { 
+            background: var(--accent); color: white; border: none; border-radius: 15px; 
+            width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+        .s-btn:hover { opacity: 0.9; }
+
+        /* --- 5. HERO SECTION --- */
+        .hero-section { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+        .hero-temp { font-size: 7rem; font-weight: 200; line-height: 1; letter-spacing: -4px; text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .hero-icon { font-size: 6rem; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2)); }
+        .hero-stat { text-align: right; }
+        .hero-stat .status { font-size: 1.5rem; font-weight: 500; margin-bottom: 5px; text-transform: capitalize;}
+        .hero-stat .range { color: var(--text-muted); font-size: 1rem; }
+
+        /* --- 6. INFO GRID --- */
+        .info-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            flex-grow: 1; overflow-y: auto; padding-right: 5px;
+        }
+        .info-grid::-webkit-scrollbar { display: none; }
+
+        .card {
+            background: var(--glass-bg); border-radius: 24px; padding: 20px;
+            border: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; justify-content: space-between;
+            transition: transform 0.2s, background 0.2s;
+            position: relative; overflow: hidden;
+        }
+        .card:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
+
+        .card-head { display: flex; gap: 8px; align-items: center; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
+        .card-val { font-size: 1.4rem; font-weight: 600; }
+        .card-sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
+
+        .progress-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: auto; }
+        .progress-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+        /* --- 7. FORECAST STRIP --- */
+        .forecast-strip {
+            display: flex; justify-content: space-between; gap: 10px;
+            background: rgba(0,0,0,0.2); padding: 20px; border-radius: 30px;
+        }
+        .day-item { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .day-name { font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
+        .day-icon { font-size: 1.5rem; margin: 5px 0; }
+        .day-temp { font-weight: 700; font-size: 1rem; }
+
+        @media (max-width: 800px) {
+            .app-container { width: 100%; height: 100%; border-radius: 0; border: none; padding: 20px; }
+            .hero-section { flex-direction: column; gap: 10px; text-align: center; }
+            .hero-stat { text-align: center; }
+            .info-grid { grid-template-columns: repeat(2, 1fr); }
+            .top-bar { flex-direction: column; align-items: stretch; }
+            .search-wrap { width: 100%; }
+        }
+    </style>
 </head>
 <body>
-    <div id="dynamic-bg"></div>
 
-    <div class="container glass">
-        <h1>Weather</h1>
+    <div id="scene">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
         
-        <div class="search-box">
-            <input id="cityInput" type="text" placeholder="Search city..." autocomplete="off" />
-            <button onclick="getWeather()">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-        </div>
-
-        <div id="loader" class="hidden">Loading...</div>
-        <div id="error" class="hidden"></div>
-
-        <div id="result" class="card hidden">
-            <h2 id="cityName">New York, US</h2>
-            <div class="weather-main">
-                <div id="weatherIcon" class="weather-icon">☀️</div>
-                <div id="temperature" class="temp">24°</div>
+        <div class="sun" id="bg-sun"></div>
+        <div class="moon" id="bg-moon"></div>
+        
+        <div class="cloud c1" id="cloud1"></div>
+        <div class="cloud c2" id="cloud2"></div>
+        
+        <div class="rain-container" id="bg-rain">
             </div>
-            <p id="condition" class="condition-text">Clear Sky</p>
-            
-            <div class="details glass-inner">
-                <div class="detail-item">
-                    <i class="fa-solid fa-wind"></i>
-                    <span id="wind">10 km/h</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fa-solid fa-droplet"></i>
-                    <span id="humidity">50%</span>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <script src="app.js"></script>
+    <div class="app-container">
+        
+        <div class="top-bar">
+            <div class="location-box">
+                <h1 id="city">Weather</h1>
+                <span id="date">Loading...</span>
+            </div>
+            <div class="search-wrap">
+                <input type="text" class="s-input" id="search-input" value="Kırklareli" placeholder="Search city...">
+                <button class="s-btn" onclick="fetchWeather()"><ion-icon name="search"></ion-icon></button>
+            </div>
+        </div>
+
+        <div class="hero-section">
+            <div class="hero-temp" id="temp">--°</div>
+            <div class="hero-icon"><ion-icon name="partly-sunny" id="main-icon"></ion-icon></div>
+            <div class="hero-stat">
+                <div class="status" id="desc">--</div>
+                <div class="range">H: <span id="max">--</span>° L: <span id="min">--</span>°</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="card">
+                <div class="card-head"><ion-icon name="speed-outline"></ion-icon> Wind</div>
+                <div class="card-val" id="wind">--</div>
+                <div class="card-sub" id="wind-dir">--</div>
+            </div>
+            <div class="card">
+                <div class="card-head"><ion-icon name="water-outline"></ion-icon> Humidity</div>
+                <div class="card-val" id="hum">--</div>
+                <div class="progress-track"><div class="progress-fill" id="hum-bar" style="width:0%; background:#4facfe"></div></div>
+            </div>
+            <div class="card">
+                <div class="card-head"><ion-icon name="sunny-outline"></ion-icon> UV Index</div>
+                <div class="card-val" id="uv">--</div>
+                <div class="progress-track"><div class="progress-fill" id="uv-bar" style="width:0%; background:orange"></div></div>
+            </div>
+            <div class="card">
+                <div class="card-head"><ion-icon name="thermometer-outline"></ion-icon> Feels Like</div>
+                <div class="card-val" id="feel">--</div>
+                <div class="card-sub">Actual feel</div>
+            </div>
+            <div class="card">
+                <div class="card-head"><ion-icon name="eye-outline"></ion-icon> Visibility</div>
+                <div class="card-val" id="vis">--</div>
+            </div>
+            <div class="card">
+                <div class="card-head"><ion-icon name="speedometer-outline"></ion-icon> Pressure</div>
+                <div class="card-val" id="pres">--</div>
+            </div>
+            <div class="card">
+                <div class="card-head"><ion-icon name="sunrise-outline"></ion-icon> Sunrise</div>
+                <div class="card-val" id="sunrise">--</div>
+                <div class="card-sub">Sunset: <span id="sunset">--</span></div>
+            </div>
+            <div class="card">
+                <div class="card-head"><ion-icon name="leaf-outline"></ion-icon> AQI</div>
+                <div class="card-val" id="aqi">--</div>
+                <div class="progress-track"><div class="progress-fill" id="aqi-bar" style="width:0%; background:lime"></div></div>
+            </div>
+        </div>
+
+        <div class="forecast-strip" id="daily-container">
+            </div>
+
+    </div>
+
+    <script>
+        // Init Rain (Hidden by default)
+        const rainCont = document.getElementById('bg-rain');
+        for(let i=0; i<50; i++){
+            let d = document.createElement('div');
+            d.className = 'rain-drop';
+            d.style.left = Math.random()*100 + '%';
+            d.style.animationDelay = Math.random()*1 + 's';
+            d.style.animationDuration = 0.5 + Math.random()*0.5 + 's';
+            rainCont.appendChild(d);
+        }
+
+        function safe(value, unit = "") {
+            if (value === null || value === undefined || isNaN(value)) return "--";
+            return Math.round(value) + unit;
+        }
+
+        document.getElementById("search-input").addEventListener("keypress", (e) => {
+            if(e.key === "Enter") fetchWeather();
+        });
+
+        async function fetchWeather() {
+            const city = document.getElementById("search-input").value;
+            if(!city) return;
+
+            try {
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+                const geoData = await geoRes.json();
+
+                if(!geoData.results) { alert("City not found!"); return; }
+
+                const { latitude, longitude, name, country, timezone } = geoData.results[0];
+
+                const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,visibility,rain,showers,snowfall&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,sunrise,sunset&timezone=auto&models=best_match`;
+                
+                let wData, aqiData;
+                try {
+                    const wRes = await fetch(weatherUrl);
+                    wData = await wRes.json();
+                } catch(e) {}
+
+                try {
+                    const aqiRes = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&current=european_aqi`);
+                    const aqiJson = await aqiRes.json();
+                    aqiData = aqiJson.current ? aqiJson.current.european_aqi : null;
+                } catch(e) {}
+
+                if(wData) updateUI(name, country, timezone, wData, aqiData);
+
+            } catch (error) { console.error(error); alert("Error fetching data"); }
+        }
+
+        function updateUI(city, country, timezone, data, aqi) {
+            const cur = data.current;
+            const daily = data.daily;
+
+            // Update Background Scene
+            updateScene(cur.is_day, cur.weather_code);
+
+            document.getElementById("city").innerText = `${city}, ${country}`;
+            const dateOpts = { weekday: 'long', month: 'short', day: 'numeric', timeZone: timezone };
+            document.getElementById("date").innerText = new Date().toLocaleString('en-US', dateOpts);
+
+            document.getElementById("temp").innerText = safe(cur.temperature_2m, "°");
+            document.getElementById("desc").innerText = getWMOText(cur.weather_code);
+            document.getElementById("main-icon").name = getWMOIcon(cur.weather_code, cur.is_day);
+            document.getElementById("max").innerText = safe(daily.temperature_2m_max[0]);
+            document.getElementById("min").innerText = safe(daily.temperature_2m_min[0]);
+
+            document.getElementById("wind").innerText = safe(cur.wind_speed_10m, " km/h");
+            document.getElementById("wind-dir").innerText = getWindDir(cur.wind_direction_10m);
+            
+            document.getElementById("hum").innerText = safe(cur.relative_humidity_2m, "%");
+            document.getElementById("hum-bar").style.width = (cur.relative_humidity_2m || 0) + "%";
+
+            const uv = daily.uv_index_max ? daily.uv_index_max[0] : null;
+            document.getElementById("uv").innerText = safe(uv);
+            document.getElementById("uv-bar").style.width = Math.min((uv || 0) * 10, 100) + "%";
+            
+            document.getElementById("feel").innerText = safe(cur.apparent_temperature, "°");
+            document.getElementById("aqi").innerText = safe(aqi);
+            
+            if(aqi !== null) {
+                const aqiP = Math.min(aqi, 100);
+                document.getElementById("aqi-bar").style.width = aqiP + "%";
+                document.getElementById("aqi-bar").style.background = aqi < 50 ? "#00e676" : "#ff3d00";
+            }
+
+            document.getElementById("vis").innerText = safe(cur.visibility / 1000, " km");
+            document.getElementById("pres").innerText = safe(cur.surface_pressure, " hPa");
+
+            const sunrise = daily.sunrise[0] ? daily.sunrise[0].split("T")[1] : "--";
+            const sunset = daily.sunset[0] ? daily.sunset[0].split("T")[1] : "--";
+            document.getElementById("sunrise").innerText = sunrise;
+            document.getElementById("sunset").innerText = sunset;
+
+            const container = document.getElementById("daily-container");
+            container.innerHTML = "";
+            const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            
+            for(let i=1; i<6; i++) {
+                const d = new Date(daily.time[i]);
+                const dayName = days[d.getDay()];
+                const icon = getWMOIcon(daily.weather_code[i], 1);
+                const max = Math.round(daily.temperature_2m_max[i]);
+                const min = Math.round(daily.temperature_2m_min[i]);
+
+                container.innerHTML += `
+                <div class="d-item">
+                    <div class="d-day">${dayName}</div>
+                    <ion-icon name="${icon}" class="d-icon"></ion-icon>
+                    <div class="d-temp">${max}° / ${min}°</div>
+                </div>`;
+            }
+        }
+
+        function updateScene(isDay, code) {
+            const scene = document.getElementById('scene');
+            const sun = document.getElementById('bg-sun');
+            const moon = document.getElementById('bg-moon');
+            const clouds = [document.getElementById('cloud1'), document.getElementById('cloud2')];
+            const rain = document.getElementById('bg-rain');
+
+            // Reset
+            sun.style.opacity = 0; moon.style.opacity = 0;
+            rain.style.opacity = 0;
+            clouds.forEach(c => c.style.opacity = 0);
+
+            // Day/Night Base
+            if(isDay) {
+                scene.style.background = "linear-gradient(180deg, #4facfe, #00f2fe)";
+                sun.style.opacity = 1;
+            } else {
+                scene.style.background = "linear-gradient(180deg, #0f0c29, #302b63, #24243e)";
+                moon.style.opacity = 1;
+            }
+
+            // Weather conditions
+            // Clouds
+            if(code > 1) {
+                clouds.forEach(c => c.style.opacity = 0.8);
+                if(isDay) scene.style.background = "linear-gradient(180deg, #757f9a, #d7dde8)"; // Greyish day
+            }
+            // Rain
+            if(code >= 50) {
+                rain.style.opacity = 1;
+                scene.style.background = "linear-gradient(180deg, #203a43, #2c5364)"; // Stormy
+            }
+        }
+
+        function getWMOIcon(code, isDay) {
+            if (code === 0) return isDay ? "sunny" : "moon";
+            if (code <= 3) return isDay ? "partly-sunny" : "cloudy-night";
+            if (code <= 48) return "cloudy";
+            if (code <= 67) return "rainy";
+            if (code <= 77) return "snow";
+            if (code <= 82) return "umbrella";
+            if (code <= 99) return "thunderstorm";
+            return "help";
+        }
+
+        function getWMOText(code) {
+            const codes = {0:"Clear", 1:"Mainly Clear", 2:"Partly Cloudy", 3:"Overcast", 45:"Fog", 48:"Rime Fog", 51:"Drizzle", 61:"Rain", 71:"Snow", 95:"Thunderstorm"};
+            return codes[code] || "Unknown";
+        }
+
+        function getWindDir(degree) {
+            if (degree === undefined) return "--";
+            const sectors = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+            return sectors[Math.round(degree / 45) % 8];
+        }
+
+        window.onload = () => { document.getElementById("search-input").focus(); };
+    </script>
 </body>
 </html>
